@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,6 +17,18 @@ namespace ChatService.Hubs
         {
             _connections = connections;
             _botUser = "MyChat Bot";
+        }
+
+        public override Task OnDisconnectedAsync(Exception exception)
+        {
+            if (_connections.TryGetValue(Context.ConnectionId, out UserConnection userConnection))
+            {
+                _connections.Remove(Context.ConnectionId);
+                Clients.Group(userConnection.Room)
+                    .SendAsync("ReceiveMessage", _botUser, $"{userConnection.User} has left");
+            }
+
+            return base.OnDisconnectedAsync(exception);
         }
 
         public async Task SendMessage(string message)
